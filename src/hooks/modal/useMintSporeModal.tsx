@@ -1,4 +1,10 @@
-import { SporeDataProps, createSpore } from '@spore-sdk/core';
+import {
+    SporeDataProps,
+    createSpore,
+    splitContentIntoSegments,
+    getSporeTypeHash,
+    extendContentType, mintSporeSegment
+} from '@spore-sdk/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useDisclosure, useId, useMediaQuery } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
@@ -10,11 +16,12 @@ import { showSuccess } from '@/utils/notifications';
 import { useRouter } from 'next/router';
 import { useMantineTheme } from '@mantine/core';
 import { getMIMETypeByName } from '@/utils/mime';
-import { BI, Cell } from '@ckb-lumos/lumos';
+import {BI, Cell, Hash} from '@ckb-lumos/lumos';
 import { useSporesByAddressQuery } from '../query/useSporesByAddressQuery';
 import { useClusterSporesQuery } from '../query/useClusterSporesQuery';
 import { useMintableClustersQuery } from '../query/useMintableClusters';
 import { useClustersByAddressQuery } from '../query/useClustersByAddress';
+import {ckbHash} from "@ckb-lumos/base/lib/utils";
 
 export default function useMintSporeModal(id?: string) {
   const theme = useMantineTheme();
@@ -33,11 +40,45 @@ export default function useMintSporeModal(id?: string) {
 
   const addSpore = useCallback(
     async (...args: Parameters<typeof createSpore>) => {
-      let { txSkeleton, outputIndex } = await createSpore(...args);
+      const props = args[0];
+      const data = props.data;
+
+      // Modify Video Spore Cell's data
+      const contentHash: Hash = ckbHash(data.content);
+      const modifiedContentType: string = extendContentType(data.contentType);
+      let { txSkeleton, outputIndex } = await createSpore({
+        ...args[0],
+        data: {
+          ...data,
+          contentType: modifiedContentType,
+          content: contentHash,
+        },
+      });
+
+      // Send transaction to create Video Spore Cell
       const signedTx = await signTransaction(txSkeleton);
       await sendTransaction(signedTx);
       const outputs = txSkeleton.get('outputs');
       const spore = outputs.get(outputIndex);
+      if (!spore) {
+          return spore;
+      }
+
+      // Split content into segments
+      const defaultSegmentSize = 10 * 1024; // 10kb
+      const segmentSize = props.maxTransactionSize || defaultSegmentSize;
+      const segments = splitContentIntoSegments(props.data.content, segmentSize);
+      console.log(`Split Spore ${spore.cellOutput.type!.args} into ${segments.length} segments, each segment size: ${segmentSize} bytes.`);
+
+      // Mint Spore Segment Cells
+      const sporeTypeHash = getSporeTypeHash(spore);
+      for (const segment of segments) {
+          const { txSkeleton: mintSegmentTxSkeleton } = await mintSporeSegment(sporeTypeHash, segment, props);
+          const mintSegmentSignedTx = await signTransaction(mintSegmentTxSkeleton);
+          const mintSegmentSignedTxHash = await sendTransaction(mintSegmentSignedTx);
+          console.log(`Minted Spore Segment Cell with tx hash: ${mintSegmentSignedTxHash}`);
+      }
+
       return spore;
     },
     [signTransaction],

@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@spore-sdk/core': file:/Users/keroro520/workspace/spore-sdk/packages/core
+  '@spore-sdk/core': file:/Users/keroro520/workspace/spore-sdk/packages/core/lib
   '@ckb-lumos/bi': ^0.22.0-next.3
   '@ckb-lumos/rpc': ^0.22.0-next.3
   '@ckb-lumos/base': ^0.22.0-next.3
@@ -57,6 +57,9 @@ dependencies:
   '@emotion/server':
     specifier: ^11.11.0
     version: 11.11.0
+  '@exact-realty/multipart-parser':
+    specifier: ^1.0.13
+    version: 1.0.13
   '@graphql-typed-document-node/core':
     specifier: ^3.2.0
     version: 3.2.0(graphql@16.8.1)
@@ -94,8 +97,8 @@ dependencies:
     specifier: ^6.0.21
     version: 6.0.21(@mantine/core@6.0.21)(@mantine/hooks@6.0.21)(react-dom@18.2.0)(react@18.2.0)
   '@spore-sdk/core':
-    specifier: file:/Users/keroro520/workspace/spore-sdk/packages/core
-    version: file:../spore-sdk/packages/core
+    specifier: file:/Users/keroro520/workspace/spore-sdk/packages/core/lib
+    version: file:../spore-sdk/packages/core/lib
   '@tabler/icons-react':
     specifier: ^2.40.0
     version: 2.40.0(react@18.2.0)
@@ -185,7 +188,7 @@ dependencies:
     version: 17.4.2(react-dom@18.2.0)(react@18.2.0)
   spore-graphql:
     specifier: ^0.1.8
-    version: 0.1.8(@spore-sdk/core@0.2.0-beta.2)(next@13.5.6)
+    version: 0.1.8(lib@0.0.0)(next@13.5.6)
   superjson:
     specifier: ^1.13.3
     version: 1.13.3
@@ -1630,8 +1633,8 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: false
 
-  /@exact-realty/multipart-parser@1.0.10:
-    resolution: {integrity: sha512-qfjWXnX3Zwhsaj6lO96OBhaSKEHfpFRhrQTbEhNhQ+oNTqQ7r6J1acbBDb5LQXaECRzZuC9cbq0mvQWzD5pnrw==}
+  /@exact-realty/multipart-parser@1.0.13:
+    resolution: {integrity: sha512-BGnB0VVn18dkz85rvBmp/CyxAMvUcVrsNf3qw8Fdx80V6+MsQUTxRdQnC0PzLIxbN8PKGFs8afd+ur8V1JLv8g==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     dev: false
 
@@ -7546,6 +7549,7 @@ packages:
 
   /lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+    dev: true
 
   /log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -9419,10 +9423,10 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /spore-graphql@0.1.8(@spore-sdk/core@0.2.0-beta.2)(next@13.5.6):
+  /spore-graphql@0.1.8(lib@0.0.0)(next@13.5.6):
     resolution: {integrity: sha512-TJvIDBmCNLlkGYws2Yo1qtY7laVOEKRjozs/rnV84lWnLOIpBSHBTtJGlxjC8aBsbiuizg6AulmKY6YiICglKQ==}
     peerDependencies:
-      '@spore-sdk/core': file:/Users/keroro520/workspace/spore-sdk/packages/core
+      '@spore-sdk/core': file:/Users/keroro520/workspace/spore-sdk/packages/core/lib
     dependencies:
       '@apollo/server': 4.9.5(graphql@16.8.1)
       '@as-integrations/next': 3.0.0(@apollo/server@4.9.5)(next@13.5.6)
@@ -9430,7 +9434,7 @@ packages:
       '@ckb-lumos/codec': 0.22.0-next.3
       '@ckb-lumos/config-manager': 0.22.0-next.3
       '@ckb-lumos/lumos': 0.22.0-next.3
-      '@spore-sdk/core': file:../spore-sdk/packages/core
+      '@spore-sdk/core': file:../spore-sdk/packages/core/lib
       combine-async-iterators: 2.1.0
       dataloader: 2.2.2
       graphql: 16.8.1
@@ -10625,19 +10629,7 @@ packages:
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: false
 
-  file:../spore-sdk/packages/core:
-    resolution: {directory: ../spore-sdk/packages/core, type: directory}
-    name: '@spore-sdk/core'
-    dependencies:
-      '@ckb-lumos/base': 0.22.0-next.3
-      '@ckb-lumos/bi': 0.22.0-next.3
-      '@ckb-lumos/codec': 0.22.0-next.3
-      '@ckb-lumos/common-scripts': 0.22.0-next.3
-      '@ckb-lumos/config-manager': 0.22.0-next.3
-      '@ckb-lumos/lumos': 0.22.0-next.3
-      '@ckb-lumos/rpc': 0.22.0-next.3
-      '@exact-realty/multipart-parser': 1.0.10
-      lodash: 4.17.21
-    transitivePeerDependencies:
-      - encoding
+  file:../spore-sdk/packages/core/lib:
+    resolution: {directory: ../spore-sdk/packages/core/lib, type: directory}
+    name: lib
     dev: false

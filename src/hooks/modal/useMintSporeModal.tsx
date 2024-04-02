@@ -1,9 +1,7 @@
 import {
     SporeDataProps,
     createSpore,
-    splitContentIntoSegments,
-    getSporeTypeHash,
-    extendContentType, mintSporeSegment
+    SporeConfig, injectCapacityAndPayFee, getSporeConfig,
 } from '@spore-sdk/core';
 import { useCallback, useEffect, useState } from 'react';
 import { useDisclosure, useId, useMediaQuery } from '@mantine/hooks';
@@ -21,7 +19,151 @@ import { useSporesByAddressQuery } from '../query/useSporesByAddressQuery';
 import { useClusterSporesQuery } from '../query/useClusterSporesQuery';
 import { useMintableClustersQuery } from '../query/useMintableClusters';
 import { useClustersByAddressQuery } from '../query/useClustersByAddress';
-import {ckbHash} from "@ckb-lumos/base/lib/utils";
+import {ckbHash, computeScriptHash} from "@ckb-lumos/base/lib/utils";
+import { Address, CellDep, OutPoint, Script } from '@ckb-lumos/base';
+import { BytesLike } from '@ckb-lumos/codec';
+import { FromInfo } from '@ckb-lumos/common-scripts';
+import { BIish } from '@ckb-lumos/bi';
+import { helpers, HexString, Indexer, RPC } from '@ckb-lumos/lumos';
+import {bytify, hexify} from "@ckb-lumos/codec/lib/bytes";
+
+
+// TODO Demo only
+const defaultSegmentSize: number = 10 * 1024; // 10kb
+const BindingLifecycleTypeHash: Hash = '0x20f1117a520a066fa9bf99ace508226b8706d559270c35c81403e057ccdc583d';
+const BindingLifecycleCellDep: CellDep = {
+    outPoint: {
+        txHash: '0x1d1dd7e545de483e098c818d61d9a6a711b7e8a028c196908daee2bbcafa34a8',
+        index: '0x0',
+    },
+    depType: 'code',
+};
+
+
+// splitContentIntoSegments splits the content into segments with the specified size.
+export function splitContentIntoSegments(content: BytesLike, segmentSize: number): BytesLike[] {
+    const buffer = bytify(content);
+    const bufferSize = buffer.length;
+
+    const segments: BytesLike[] = [];
+    let i = 0;
+    let offset = 0;
+    while (offset < bufferSize) {
+        const segment = buffer.slice(offset, offset + segmentSize);
+        const segmentIndex = new Uint8Array([i]);
+        const segmentContentWithIndex = new Uint8Array(segmentIndex.length + segment.length);
+        segmentContentWithIndex.set(segmentIndex, 0);
+        segmentContentWithIndex.set(segment, segmentIndex.length);
+
+        segments.push(segmentContentWithIndex);
+        offset += segmentSize;
+        i += 1;
+
+        console.error(`Segment ${i} size: ${segment.length} bytes.`);
+    }
+
+    return segments;
+}
+
+export function getSporeTypeHash(spore: Cell): Hash {
+    return computeScriptHash(spore.cellOutput.type!);
+}
+
+export function extendContentType(contentType: string): string {
+    return contentType + '+spore';
+}
+
+
+export async function mintSporeSegment(
+    sporeTypeHash: Hash,
+    segment: BytesLike,
+    props: {
+        data: SporeDataProps;
+        toLock: Script;
+        fromInfos: FromInfo[];
+        changeAddress?: Address;
+        updateOutput?: (cell: Cell) => Cell;
+        capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
+        cluster?: {
+            updateOutput?: (cell: Cell) => Cell;
+            capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
+            updateWitness?: HexString | ((witness: HexString) => HexString);
+        };
+        clusterAgentOutPoint?: OutPoint;
+        clusterAgent?: {
+            updateOutput?: (cell: Cell) => Cell;
+            capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
+            updateWitness?: HexString | ((witness: HexString) => HexString);
+        };
+        mutant?: {
+            paymentAmount?: (minPayment: BI, lock: Script, cell: Cell) => BIish;
+        };
+        maxTransactionSize?: number | false;
+        config?: SporeConfig;
+    },
+): Promise<{
+    txSkeleton: helpers.TransactionSkeletonType,
+}> {
+    // Env
+    const config = props.config ?? getSporeConfig();
+    const ckbIndexerUrl = config.ckbIndexerUrl;
+    const ckbNodeUrl = config.ckbNodeUrl;
+    const indexer = new Indexer(ckbIndexerUrl);
+    const rpc = new RPC(ckbNodeUrl);
+    const fromInfos = props.fromInfos;
+
+    // Init txSkeleton
+    let txSkeleton = helpers.TransactionSkeleton({ cellProvider: indexer });
+
+    // Build Spore Segment Cell's lock script
+    // Build Spore Segment Cell
+    const sporeSegmentLockScript: Script = {
+        codeHash: BindingLifecycleTypeHash,
+        hashType: 'type',
+        args: sporeTypeHash,
+    };
+    const sporeSegmentOutput: Cell = {
+        cellOutput: {
+            capacity: '0x0',
+            lock: sporeSegmentLockScript,
+        },
+        data: hexify(segment),
+    };
+
+    // Fill the Spore Segment Cell's occupied capacity
+    const occupiedCapacity = helpers.minimalCellCapacityCompatible(sporeSegmentOutput);
+    sporeSegmentOutput.cellOutput.capacity = '0x' + occupiedCapacity.toString(16);
+
+    // Build the transaction:
+    //   - outputs[0]: Spore Segment Cell
+    //   - cellDeps[0]: BindingLifecycleCellDep
+    //   - cellDeps[1]: SECP256K1_BLAKE160
+    txSkeleton = txSkeleton.update('outputs', (outputs) => outputs.push(sporeSegmentOutput));
+    txSkeleton = txSkeleton.update('cellDeps', (cellDeps) => cellDeps.push(BindingLifecycleCellDep));
+    txSkeleton = txSkeleton.update('cellDeps', (cellDeps) =>
+        cellDeps.push({
+            outPoint: {
+                txHash: config.lumos.SCRIPTS.SECP256K1_BLAKE160!.TX_HASH,
+                index: config.lumos.SCRIPTS.SECP256K1_BLAKE160!.INDEX,
+            },
+            depType: config.lumos.SCRIPTS.SECP256K1_BLAKE160!.DEP_TYPE,
+        }),
+    );
+
+    const injectNeededCapacityResult = await injectCapacityAndPayFee({
+        txSkeleton,
+        fromInfos: props.fromInfos,
+        changeAddress: props.changeAddress,
+        config: config,
+    });
+    txSkeleton = injectNeededCapacityResult.txSkeleton;
+
+    return {
+        txSkeleton,
+    };
+}
+
+
 
 export default function useMintSporeModal(id?: string) {
   const theme = useMantineTheme();

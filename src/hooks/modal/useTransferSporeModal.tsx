@@ -2,7 +2,13 @@ import { BI, OutPoint, config, helpers } from '@ckb-lumos/lumos';
 import { useCallback, useEffect } from 'react';
 import { useDisclosure, useId } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import {getSporeByOutPoint, SporeData, transferSpore as _transferSpore, unpackToRawSporeData} from '@spore-sdk/core';
+import {
+    getSporeByOutPoint,
+    payFeeByOutput,
+    SporeData,
+    transferSpore as _transferSpore,
+    unpackToRawSporeData
+} from '@spore-sdk/core';
 import { useConnect } from '../useConnect';
 import { sendTransaction } from '@/utils/transaction';
 import { useMutation } from '@tanstack/react-query';
@@ -38,11 +44,11 @@ export default function useTransferSporeModal(sourceSpore: QuerySpore | undefine
     async (...args: Parameters<typeof _transferSpore>) => {
       let { txSkeleton, outputIndex } = await _transferSpore(...args);
 
-      // For video spore, attach segment cells as cellDeps
       const props = args[0];
       const sporeCell = await getSporeByOutPoint(props.outPoint, props.config);
       const spore = unpackToRawSporeData(sporeCell.data)
       if (spore.contentType.includes('+spore')) {
+          // For video spore, attach segment cells as cellDeps
           const segmentCells = await indexSegmentCells(sporeCell);
           segmentCells.forEach((segmentCell) => {
               txSkeleton = txSkeleton.update('cellDeps', (cellDeps) =>
@@ -51,6 +57,13 @@ export default function useTransferSporeModal(sourceSpore: QuerySpore | undefine
                       depType: 'code',
                   }),
               );
+          });
+
+          // Pay fee by the spore cell's capacity margin
+          txSkeleton = await payFeeByOutput({
+              outputIndex,
+              txSkeleton,
+              config: props.config,
           });
       }
 

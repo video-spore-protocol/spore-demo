@@ -50,13 +50,13 @@ export async function GET(_: Request, {params}: { params: { id: string } }) {
     }
 }
 
-async function completeSporeContent(sporeCell: Cell): Promise<Buffer> {
+export async function completeSporeContent(sporeCell: Cell): Promise<Buffer> {
     let segmentCells = await indexSegmentCells(sporeCell);
     sortSegmentCells(segmentCells);
     return jointSegmentCells(segmentCells);
 }
 
-async function indexSegmentCells(sporeCell: Cell): Promise<Cell[]> {
+export async function indexSegmentCells(sporeCell: Cell): Promise<Cell[]> {
     // Env
     const config = getSporeConfig();
     const indexer = new Indexer(config.ckbIndexerUrl, config.ckbNodeUrl);
@@ -80,7 +80,7 @@ async function indexSegmentCells(sporeCell: Cell): Promise<Cell[]> {
 }
 
 // Sort the segmentCells by the first byte of outputData, which is the segment index.
-function sortSegmentCells(segmentCells: Cell[]) {
+export function sortSegmentCells(segmentCells: Cell[]) {
     segmentCells.sort((a, b) => {
         const aIndex = a.data[0];
         const bIndex = b.data[0];
@@ -95,7 +95,7 @@ function sortSegmentCells(segmentCells: Cell[]) {
 }
 
 // Joint the segmentCells' data to a buffer in order.
-function jointSegmentCells(segmentCells: Cell[]): Buffer {
+export function jointSegmentCells(segmentCells: Cell[]): Buffer {
     let buffer = Buffer.alloc(0);
 
     for (const segmentCell of segmentCells) {
@@ -114,7 +114,7 @@ function jointSegmentCells(segmentCells: Cell[]): Buffer {
 }
 
 
-async function getCellsByLock(props: { lock: Script; indexer: Indexer }) {
+export async function getCellsByLock(props: { lock: Script; indexer: Indexer }) {
 
     console.error(`DEBUG BEGIN getCellsByLock lock: ${JSON.stringify(props.lock, null, 2)}`);
     const collector = props.indexer.collector({

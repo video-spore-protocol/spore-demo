@@ -2,7 +2,7 @@ import { BI, OutPoint, config, helpers } from '@ckb-lumos/lumos';
 import { useCallback, useEffect } from 'react';
 import { useDisclosure, useId } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { transferSpore as _transferSpore } from '@spore-sdk/core';
+import {getSporeByOutPoint, SporeData, transferSpore as _transferSpore, unpackToRawSporeData} from '@spore-sdk/core';
 import { useConnect } from '../useConnect';
 import { sendTransaction } from '@/utils/transaction';
 import { useMutation } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { QuerySpore } from '../query/type';
 import { useSporeQuery } from '../query/useSporeQuery';
 import { useSporesByAddressQuery } from '../query/useSporesByAddressQuery';
 import { useClusterSporesQuery } from '../query/useClusterSporesQuery';
+import {completeSporeContent, indexSegmentCells} from "@/app/api/media/[id]/route";
 
 export default function useTransferSporeModal(sourceSpore: QuerySpore | undefined) {
   const modalId = useId();
@@ -35,7 +36,24 @@ export default function useTransferSporeModal(sourceSpore: QuerySpore | undefine
 
   const transferSpore = useCallback(
     async (...args: Parameters<typeof _transferSpore>) => {
-      const { txSkeleton, outputIndex } = await _transferSpore(...args);
+      let { txSkeleton, outputIndex } = await _transferSpore(...args);
+
+      // For video spore, attach segment cells as cellDeps
+      const props = args[0];
+      const sporeCell = await getSporeByOutPoint(props.outPoint, props.config);
+      const spore = unpackToRawSporeData(sporeCell.data)
+      if (spore.contentType.includes('+spore')) {
+          const segmentCells = await indexSegmentCells(sporeCell);
+          segmentCells.forEach((segmentCell) => {
+              txSkeleton = txSkeleton.update('cellDeps', (cellDeps) =>
+                  cellDeps.push({
+                      outPoint: segmentCell.outPoint!,
+                      depType: 'code',
+                  }),
+              );
+          });
+      }
+
       const signedTx = await signTransaction(txSkeleton);
       const txHash = await sendTransaction(signedTx);
       return {

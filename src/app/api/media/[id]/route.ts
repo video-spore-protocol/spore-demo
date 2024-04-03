@@ -6,7 +6,7 @@ import {bytify} from "@ckb-lumos/codec/lib/bytes";
 
 // FIXME Demo solution only
 const VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX: string = "+spore";
-const BindingLifecycleLockTypeHash: Hash = '0x20f1117a520a066fa9bf99ace508226b8706d559270c35c81403e057ccdc583d';
+const BindingLifecycleLockTypeHash: Hash = '0x84a2a559a28d5280c19143da79d16054e7fe82b57b3678e4a896456f6cf07d11';
 
 export async function GET(_: Request, {params}: { params: { id: string } }) {
     const {id} = params;

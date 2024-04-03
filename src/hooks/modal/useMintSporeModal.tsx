@@ -30,10 +30,10 @@ import {bytify, hexify} from "@ckb-lumos/codec/lib/bytes";
 
 // TODO Demo only
 const defaultSegmentSize: number = 10 * 1024; // 10kb
-const BindingLifecycleTypeHash: Hash = '0x20f1117a520a066fa9bf99ace508226b8706d559270c35c81403e057ccdc583d';
+const BindingLifecycleTypeHash: Hash = '0x84a2a559a28d5280c19143da79d16054e7fe82b57b3678e4a896456f6cf07d11';
 const BindingLifecycleCellDep: CellDep = {
     outPoint: {
-        txHash: '0x1d1dd7e545de483e098c818d61d9a6a711b7e8a028c196908daee2bbcafa34a8',
+        txHash: '0x538d2c816004ff23b0b74d00069dec7630d5878660c8137a4a846b469467b0b1',
         index: '0x0',
     },
     depType: 'code',

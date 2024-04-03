@@ -24,7 +24,7 @@ import { helpers, HexString, Indexer, RPC } from "@ckb-lumos/lumos";
 import { bytify, hexify } from "@ckb-lumos/codec/lib/bytes";
 
 // TODO Demo only
-const defaultSegmentSize: number = parseInt(process.env.NEXT_PUBLIC_DEFAULT_SEGMENT_SIZE!, 10) * 1024;
+const defaultSegmentSize: number = parseInt(process.env.NEXT_PUBLIC_DEFAULT_SEGMENT_SIZE!, 10);
 const BindingLifecycleTypeHash: Hash = process.env.NEXT_PUBLIC_BINDING_LIFECYCLE_LOCK_TYPE_HASH!;
 const BindingLifecycleCellDep: CellDep = {
   outPoint: {
@@ -196,7 +196,6 @@ export default function useMintVideoSporeModal(id?: string) {
       }
 
       // Split content into segments
-      const defaultSegmentSize = 10 * 1024; // 10kb
       const segmentSize = props.maxTransactionSize || defaultSegmentSize;
       const segments = splitContentIntoSegments(props.data.content, segmentSize);
       console.log(

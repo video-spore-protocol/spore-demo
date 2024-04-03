@@ -5,60 +5,9 @@ import { utils } from "@ckb-lumos/base";
 import { bytify } from "@ckb-lumos/codec/lib/bytes";
 
 // FIXME Demo solution only
-// const VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX: string = "+spore";
-// const BindingLifecycleLockTypeHash: Hash = "0x20f1117a520a066fa9bf99ace508226b8706d559270c35c81403e057ccdc583d";
 const VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX: string =
   process.env.NEXT_PUBLIC_VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX!;
 const BindingLifecycleLockTypeHash: Hash = process.env.NEXT_PUBLIC_BINDING_LIFECYCLE_LOCK_TYPE_HASH!;
-
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
-  if (!id) {
-    return new Response(null, { status: 400 });
-  }
-
-  try {
-    const cell = await getSporeById(id, sporeConfig);
-    const spore = unpackToRawSporeData(cell.data);
-
-    console.error(`DEBUG Spore content type: ${spore.contentType}`);
-    console.log("Spore-content-type", spore.contentType);
-
-    // TODO It should handle content-type more gracefully
-    if (spore.contentType.endsWith(VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX)) {
-      console.error(`DEBUG Enter VIDEO Spore`);
-      const buffer = await completeSporeContent(cell);
-      return new Response(buffer, {
-        status: 200,
-        headers: {
-          // TODO It should handle content-type more gracefully
-          "Content-Type": spore.contentType.replace(VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX, ""),
-          // TODO FIXME uncomment this line
-          // 'Cache-Control': 'public, max-age=31536000',
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
-    }
-
-    console.error(`DEBUG Enter normal Spore`);
-    const buffer = Buffer.from(spore.content.toString().slice(2), "hex");
-    return new Response(buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": spore.contentType,
-        // TODO FIXME uncomment this line
-        // "Cache-Control": "public, max-age=31536000",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-      },
-    });
-  } catch {
-    return new Response(null, { status: 404 });
-  }
-}
 
 async function completeSporeContent(sporeCell: Cell): Promise<Buffer> {
   let segmentCells = await indexSegmentCells(sporeCell);
@@ -139,3 +88,5 @@ async function getCellsByLock(props: { lock: Script; indexer: Indexer }) {
 
   return cells;
 }
+
+export { completeSporeContent, indexSegmentCells, sortSegmentCells, jointSegmentCells, getCellsByLock };

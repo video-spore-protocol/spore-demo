@@ -57,6 +57,9 @@ dependencies:
   '@emotion/server':
     specifier: ^11.11.0
     version: 11.11.0
+  '@exact-realty/multipart-parser':
+    specifier: ^1.0.13
+    version: 1.0.13
   '@graphql-typed-document-node/core':
     specifier: ^3.2.0
     version: 3.2.0(graphql@16.8.1)
@@ -1630,8 +1633,8 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: false
 
-  /@exact-realty/multipart-parser@1.0.10:
-    resolution: {integrity: sha512-qfjWXnX3Zwhsaj6lO96OBhaSKEHfpFRhrQTbEhNhQ+oNTqQ7r6J1acbBDb5LQXaECRzZuC9cbq0mvQWzD5pnrw==}
+  /@exact-realty/multipart-parser@1.0.13:
+    resolution: {integrity: sha512-BGnB0VVn18dkz85rvBmp/CyxAMvUcVrsNf3qw8Fdx80V6+MsQUTxRdQnC0PzLIxbN8PKGFs8afd+ur8V1JLv8g==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     dev: false
 
@@ -3212,7 +3215,7 @@ packages:
       '@ckb-lumos/config-manager': 0.22.0-next.3
       '@ckb-lumos/lumos': 0.22.0-next.3
       '@ckb-lumos/rpc': 0.22.0-next.3
-      '@exact-realty/multipart-parser': 1.0.10
+      '@exact-realty/multipart-parser': 1.0.13
       lodash: 4.17.21
     transitivePeerDependencies:
       - encoding

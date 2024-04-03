@@ -68,7 +68,7 @@ export default function SporePage() {
 
   const { data: spore, isLoading: isSporeLoading } = useSporeQuery(id as string);
   const isLoading = isSporeLoading || !spore;
-  // console.log(spore, "sporeis");
+  // console.log(spore, "sporeis++", spore?.contentType);
 
   const { data: spores } = useClusterSporesQuery(spore?.cluster?.id || undefined);
 
@@ -104,7 +104,6 @@ export default function SporePage() {
   }, [connected, address, owner, getAnyoneCanPayLock]);
 
   const txHash = spore?.cell?.outPoint?.txHash ?? "";
-  // console.log(spore);
 
   const pager = spore?.cluster && spores && spores.length > 1 && (
     <Group position="apart">

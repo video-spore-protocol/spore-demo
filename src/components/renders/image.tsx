@@ -1,38 +1,30 @@
-import { QuerySpore } from '@/hooks/query/type';
-import { BI } from '@ckb-lumos/lumos';
-import {
-  AspectRatio,
-  Box,
-  Image,
-  createStyles,
-  useMantineTheme,
-} from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
-import { useEffect, useMemo, useState } from 'react';
+import { QuerySpore } from "@/hooks/query/type";
+import { BI } from "@ckb-lumos/lumos";
+import { AspectRatio, Box, Image, createStyles, useMantineTheme } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import { useEffect, useMemo, useState } from "react";
 
 export interface ImageSporeRenderProps {
   spore: QuerySpore;
   ratio?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 const useStyles = createStyles((_, params?: { pixelated: boolean }) => ({
   image: {
-    imageRendering: params?.pixelated ? 'pixelated' : 'auto',
+    imageRendering: params?.pixelated ? "pixelated" : "auto",
   },
   figure: {
-    width: '100%',
+    width: "100%",
   },
 }));
 
 export function ImageSporeCoverRender(props: ImageSporeRenderProps) {
   const { spore, ratio = 1 } = props;
-  const capacity = useMemo(
-    () => BI.from(spore.cell?.cellOutput.capacity ?? 0).toNumber(),
-    [spore],
-  );
+  // console.log("image-spore-rendeer", spore, spore.contentType);
+  const capacity = useMemo(() => BI.from(spore.cell?.cellOutput.capacity ?? 0).toNumber(), [spore]);
   const { classes } = useStyles({ pixelated: capacity < 10_000 * 10 ** 8 });
-
+  // console.log("image 渲染了");
   return (
     <AspectRatio ratio={ratio} bg="#F4F5F9">
       <Image
@@ -53,26 +45,24 @@ export interface ImagePreviewRenderProps {
   content: Blob;
 }
 
-const usePreviewStyles = createStyles(
-  (theme, params?: { pixelated: boolean }) => ({
-    container: {
-      borderColor: theme.colors.text[0],
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderRadius: '6px',
-      backgroundColor: theme.colors.background[1],
-    },
-    image: {
-      width: '616px',
-      height: '260px',
-      imageRendering: params?.pixelated ? 'pixelated' : 'auto',
+const usePreviewStyles = createStyles((theme, params?: { pixelated: boolean }) => ({
+  container: {
+    borderColor: theme.colors.text[0],
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderRadius: "6px",
+    backgroundColor: theme.colors.background[1],
+  },
+  image: {
+    width: "616px",
+    height: "260px",
+    imageRendering: params?.pixelated ? "pixelated" : "auto",
 
-      [`@media (max-width: ${theme.breakpoints.sm})`]: {
-        width: 'auto',
-      },
+    [`@media (max-width: ${theme.breakpoints.sm})`]: {
+      width: "auto",
     },
-  }),
-);
+  },
+}));
 
 export function ImagePreviewRender(props: ImagePreviewRenderProps) {
   const { content } = props;
@@ -82,6 +72,7 @@ export function ImagePreviewRender(props: ImagePreviewRenderProps) {
   const { classes } = usePreviewStyles({
     pixelated: (content?.size ?? 0) < 10_000,
   });
+  console.log("ImagePreviewRender", dataUrl);
 
   useEffect(() => {
     const reader = new window.FileReader();

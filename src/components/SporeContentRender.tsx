@@ -40,9 +40,10 @@ export default function SporeContentRender({ spore }: { spore: QuerySpore | unde
       ""
     );
   }
+  // console.log("content-render", spore, spore.contentType);
 
   if (isImageMIMEType(spore!.contentType)) {
-    return !(
+    return (
       <Group position="center">
         <Box className={classes.image}>
           <ImageSporeContentRender spore={spore} />

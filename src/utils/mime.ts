@@ -35,6 +35,9 @@ export function isImageMIMEType(contentType: string | undefined | null) {
   const compatibleContentType = contentType.replace("+spore", "");
 
   const { type, subtype } = decodeContentType(compatibleContentType);
+  // const { type, subtype } = decodeContentType(contentType);
+  // console.log("isImageMIMEType", type, subtype);
+  // console.log(IMAGE_MIME_TYPE.includes(`${type}/${subtype}` as any));
   return IMAGE_MIME_TYPE.includes(`${type}/${subtype}` as any);
 }
 

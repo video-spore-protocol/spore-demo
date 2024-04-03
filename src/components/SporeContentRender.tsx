@@ -34,8 +34,15 @@ export default function SporeContentRender({ spore }: { spore: QuerySpore | unde
     return null;
   }
 
+  if (spore && spore.contentType.endsWith(process.env.NEXT_PUBLIC_VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX!)) {
+    spore.contentType = spore.contentType.replace(
+      process.env.NEXT_PUBLIC_VIDEO_SPORE_PROTOCOL_CONTENT_TYPE_SUFFIX!,
+      ""
+    );
+  }
+
   if (isImageMIMEType(spore!.contentType)) {
-    return (
+    return !(
       <Group position="center">
         <Box className={classes.image}>
           <ImageSporeContentRender spore={spore} />

@@ -68,6 +68,7 @@ export default function SporePage() {
 
   const { data: spore, isLoading: isSporeLoading } = useSporeQuery(id as string);
   const isLoading = isSporeLoading || !spore;
+  // console.log(spore, "sporeis");
 
   const { data: spores } = useClusterSporesQuery(spore?.cluster?.id || undefined);
 

@@ -102,8 +102,8 @@ function App({ Component, pageProps }: AppProps) {
     <>
       <Head>
         <title>Spore Demo</title>
-        {/* <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
-        <link rel="icon" href="/images/favicon.png" /> */}
+        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
+        <link rel="icon" href="/images/favicon.png" />
       </Head>
       <MantineProvider withNormalizeCSS withGlobalStyles theme={theme} emotionCache={emotionCache}>
         <ConnectProvider value={config}>

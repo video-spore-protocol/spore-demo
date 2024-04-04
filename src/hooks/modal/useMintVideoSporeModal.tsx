@@ -1,4 +1,11 @@
-import { SporeDataProps, createSpore, SporeConfig, injectCapacityAndPayFee, getSporeConfig } from "@spore-sdk/core";
+import {
+    SporeDataProps,
+    createSpore,
+    SporeConfig,
+    injectCapacityAndPayFee,
+    getSporeConfig,
+    payFeeByOutput
+} from "@spore-sdk/core";
 import { useCallback, useEffect, useState } from "react";
 import { useDisclosure, useId, useMediaQuery } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
@@ -186,14 +193,10 @@ export default function useMintVideoSporeModal(id?: string) {
         },
       });
 
-      // Send transaction to create Video Spore Cell
-      const signedTx = await signTransaction(txSkeleton);
-      await sendTransaction(signedTx);
+      // Build transaction and Spore to create Video Spore Cell
       const outputs = txSkeleton.get("outputs");
-      const spore = outputs.get(outputIndex);
-      if (!spore) {
-        return spore;
-      }
+      const spore = outputs.get(outputIndex)!;
+      const sporeTypeHash = getSporeTypeHash(spore);
 
       // Split content into segments
       const segmentSize = props.maxTransactionSize || defaultSegmentSize;
@@ -204,13 +207,54 @@ export default function useMintVideoSporeModal(id?: string) {
         } segments, each segment size: ${segmentSize} bytes.`
       );
 
-      // Mint Spore Segment Cells
-      const sporeTypeHash = getSporeTypeHash(spore);
-      for (const segment of segments) {
+      // Attach the first segment to create-spore-transaction
+      // attach the first segment to txSkeleton's outputs
+      const firstSegment = segments[0];
+      txSkeleton = txSkeleton.update("outputs", (outputs) => {
+          const sporeSegmentLockScript: Script = {
+              codeHash: BindingLifecycleTypeHash,
+              hashType: "type",
+              args: sporeTypeHash,
+          };
+          let sporeSegmentOutput: Cell = {
+              cellOutput: {
+                  capacity: "0x0",
+                  lock: sporeSegmentLockScript,
+              },
+              data: hexify(firstSegment),
+          };
+          const occupiedCapacity = helpers.minimalCellCapacityCompatible(sporeSegmentOutput)
+          sporeSegmentOutput.cellOutput.capacity = "0x" + occupiedCapacity.toString(16);
+
+          outputs = outputs.push( sporeSegmentOutput );
+          return outputs;
+      });
+
+
+      // Inject input capacity after injecting the first segment into outputs
+      const injectNeededCapacityResult = await injectCapacityAndPayFee({
+          txSkeleton,
+          fromInfos: props.fromInfos,
+          changeAddress: props.changeAddress,
+          config: props.config,
+      });
+      txSkeleton = injectNeededCapacityResult.txSkeleton;
+
+
+      // Send create-Spore-transaction
+      const signedTx = await signTransaction(txSkeleton);
+      await sendTransaction(signedTx);
+      console.log(`send create-spore-transaction ${signedTx.hash}`)
+      if (!spore) {
+        return spore;
+      }
+
+      // Send the rest create-segment-transaction
+      for (const segment of segments.slice(1)) {
         const { txSkeleton: mintSegmentTxSkeleton } = await mintSporeSegment(sporeTypeHash, segment, props);
         const mintSegmentSignedTx = await signTransaction(mintSegmentTxSkeleton);
         const mintSegmentSignedTxHash = await sendTransaction(mintSegmentSignedTx);
-        console.log(`Minted Spore Segment Cell with tx hash: ${mintSegmentSignedTxHash}`);
+        console.log(`send create-segment-transaction: ${mintSegmentSignedTxHash}`);
       }
 
       return spore;
